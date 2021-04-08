@@ -1,9 +1,4 @@
----
-title: User's Guide for Vim in Nixpkgs
-author: Marc Weber
-date: 2016-06-25
----
-# Vim
+# Vim {#vim}
 
 Both Neovim and Vim can be configured to include your favorite plugins
 and additional libraries.
@@ -161,7 +156,7 @@ assuming that "using latest version" is ok most of the time.
 
 First create a vim-scripts file having one plugin name per line. Example:
 
-```
+```vim
 "tlib"
 {'name': 'vim-addon-sql'}
 {'filetype_regex': '\%(vim)$', 'names': ['reload', 'vim-dev-plugin']}
@@ -202,7 +197,7 @@ nix-shell -p vimUtils.vim_with_vim2nix --command "vim -c 'source generate.vim'"
 You should get a Vim buffer with the nix derivations (output1) and vam.pluginDictionaries (output2).
 You can add your Vim to your system's configuration file like this and start it by "vim-my":
 
-```
+```nix
 my-vim =
   let plugins = let inherit (vimUtils) buildVimPluginFrom2Nix; in {
     copy paste output1 here
@@ -222,7 +217,7 @@ my-vim =
 
 Sample output1:
 
-```
+```nix
 "reload" = buildVimPluginFrom2Nix { # created by nix#NixDerivation
   name = "reload";
   src = fetchgit {
@@ -253,7 +248,7 @@ Nix expressions for Vim plugins are stored in [pkgs/misc/vim-plugins](/pkgs/misc
 
 Some plugins require overrides in order to function properly. Overrides are placed in [overrides.nix](/pkgs/misc/vim-plugins/overrides.nix). Overrides are most often required when a plugin requires some dependencies, or extra steps are required during the build process. For example `deoplete-fish` requires both `deoplete-nvim` and `vim-fish`, and so the following override was added:
 
-```
+```nix
 deoplete-fish = super.deoplete-fish.overrideAttrs(old: {
   dependencies = with super; [ deoplete-nvim vim-fish ];
 });

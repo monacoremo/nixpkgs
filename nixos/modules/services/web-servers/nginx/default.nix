@@ -27,6 +27,33 @@ let
   ) cfg.virtualHosts;
   enableIPv6 = config.networking.enableIPv6;
 
+  defaultFastcgiParams = {
+    SCRIPT_FILENAME   = "$document_root$fastcgi_script_name";
+    QUERY_STRING      = "$query_string";
+    REQUEST_METHOD    = "$request_method";
+    CONTENT_TYPE      = "$content_type";
+    CONTENT_LENGTH    = "$content_length";
+
+    SCRIPT_NAME       = "$fastcgi_script_name";
+    REQUEST_URI       = "$request_uri";
+    DOCUMENT_URI      = "$document_uri";
+    DOCUMENT_ROOT     = "$document_root";
+    SERVER_PROTOCOL   = "$server_protocol";
+    REQUEST_SCHEME    = "$scheme";
+    HTTPS             = "$https if_not_empty";
+
+    GATEWAY_INTERFACE = "CGI/1.1";
+    SERVER_SOFTWARE   = "nginx/$nginx_version";
+
+    REMOTE_ADDR       = "$remote_addr";
+    REMOTE_PORT       = "$remote_port";
+    SERVER_ADDR       = "$server_addr";
+    SERVER_PORT       = "$server_port";
+    SERVER_NAME       = "$server_name";
+
+    REDIRECT_STATUS   = "200";
+  };
+
   recommendedProxyConfig = pkgs.writeText "nginx-recommended-proxy-headers.conf" ''
     proxy_set_header        Host $host;
     proxy_set_header        X-Real-IP $remote_addr;
@@ -52,6 +79,8 @@ let
       include ${pkgs.mailcap}/etc/nginx/mime.types;
       include ${cfg.package}/conf/fastcgi.conf;
       include ${cfg.package}/conf/uwsgi_params;
+
+      default_type application/octet-stream;
   '';
 
   configFile = pkgs.writers.writeNginxConfig "nginx.conf" ''
@@ -125,9 +154,9 @@ let
 
       ${optionalString (cfg.recommendedProxySettings) ''
         proxy_redirect          off;
-        proxy_connect_timeout   90;
-        proxy_send_timeout      90;
-        proxy_read_timeout      90;
+        proxy_connect_timeout   60;
+        proxy_send_timeout      60;
+        proxy_read_timeout      60;
         proxy_http_version      1.0;
         include ${recommendedProxyConfig};
       ''}
@@ -178,6 +207,12 @@ let
       ${commonHttpConfig}
       ${cfg.httpConfig}
     }''}
+
+    ${optionalString (cfg.streamConfig != "") ''
+    stream {
+      ${cfg.streamConfig}
+    }
+    ''}
 
     ${cfg.appendConfig}
   '';
@@ -283,6 +318,10 @@ let
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
       ''}
+      ${concatStringsSep "\n"
+        (mapAttrsToList (n: v: ''fastcgi_param ${n} "${v}";'')
+          (optionalAttrs (config.fastcgiParams != {})
+            (defaultFastcgiParams // config.fastcgiParams)))}
       ${optionalString (config.index != null) "index ${config.index};"}
       ${optionalString (config.tryFiles != null) "try_files ${config.tryFiles};"}
       ${optionalString (config.root != null) "root ${config.root};"}
@@ -358,6 +397,9 @@ in
         default = pkgs.nginxStable;
         defaultText = "pkgs.nginxStable";
         type = types.package;
+        apply = p: p.override {
+          modules = p.modules ++ cfg.additionalModules;
+        };
         description = "
           Nginx package to use. This defaults to the stable version. Note
           that the nginx team recommends to use the mainline version which
@@ -365,8 +407,20 @@ in
         ";
       };
 
+      additionalModules = mkOption {
+        default = [];
+        type = types.listOf (types.attrsOf types.anything);
+        example = literalExample "[ pkgs.nginxModules.brotli ]";
+        description = ''
+          Additional <link xlink:href="https://www.nginx.com/resources/wiki/modules/">third-party nginx modules</link>
+          to install. Packaged modules are available in
+          <literal>pkgs.nginxModules</literal>.
+        '';
+      };
+
       logError = mkOption {
         default = "stderr";
+        type = types.str;
         description = "
           Configures logging.
           The first parameter defines a file that will store the log. The
@@ -449,6 +503,21 @@ in
           This is mutually exclusive with the structured configuration
           via virtualHosts and the recommendedXyzSettings configuration
           options. See appendHttpConfig for appending to the generated http block.
+        ";
+      };
+
+      streamConfig = mkOption {
+        type = types.lines;
+        default = "";
+        example = ''
+          server {
+            listen 127.0.0.1:53 udp reuseport;
+            proxy_timeout 20s;
+            proxy_pass 192.168.0.1:53535;
+          }
+        '';
+        description = "
+          Configuration lines to be set inside the stream block.
         ";
       };
 
@@ -749,7 +818,7 @@ in
         ProtectControlGroups = true;
         RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
         LockPersonality = true;
-        MemoryDenyWriteExecute = !(builtins.any (mod: (mod.allowMemoryWriteExecute or false)) pkgs.nginx.modules);
+        MemoryDenyWriteExecute = !(builtins.any (mod: (mod.allowMemoryWriteExecute or false)) (optionals (cfg.package ? modules) cfg.package.modules));
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         PrivateMounts = true;

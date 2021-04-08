@@ -227,6 +227,15 @@ foreach my $u (@{$spec->{users}}) {
         $u->{hashedPassword} = hashPassword($u->{password});
     }
 
+    if (!defined $u->{shell}) {
+        if (defined $existing) {
+            $u->{shell} = $existing->{shell};
+        } else {
+            warn "warning: no declarative or previous shell for ‘$name’, setting shell to nologin\n";
+            $u->{shell} = "/run/current-system/sw/bin/nologin";
+        }
+    }
+
     $u->{fakePassword} = $existing->{fakePassword} // "x";
     $usersOut{$name} = $u;
 
@@ -279,7 +288,7 @@ foreach my $u (values %usersOut) {
     push @shadowNew, join(":", $u->{name}, $hashedPassword, "1::::::") . "\n";
 }
 
-updateFile("/etc/shadow", \@shadowNew, 0600);
+updateFile("/etc/shadow", \@shadowNew, 0640);
 {
     my $uid = getpwnam "root";
     my $gid = getgrnam "shadow";

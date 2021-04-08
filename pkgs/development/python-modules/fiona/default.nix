@@ -2,6 +2,7 @@
 , attrs, click, cligj, click-plugins, six, munch, enum34
 , pytest, boto3, mock, giflib, pytz
 , gdal_2 # can't bump to 3 yet, https://github.com/Toblerity/Fiona/issues/745
+, certifi
 }:
 
 buildPythonPackage rec {
@@ -25,6 +26,7 @@ buildPythonPackage rec {
 
   propagatedBuildInputs = [
     attrs
+    certifi
     click
     cligj
     click-plugins
@@ -41,9 +43,7 @@ buildPythonPackage rec {
   checkPhase = ''
     rm -r fiona # prevent importing local fiona
     # Some tests access network, others test packaging
-    pytest -k "not test_*_http \
-           and not test_*_https \
-           and not test_*_wheel"
+    pytest -k "not (http or https or wheel)"
   '';
 
   meta = with lib; {

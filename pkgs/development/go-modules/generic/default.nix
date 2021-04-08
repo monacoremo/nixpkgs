@@ -27,9 +27,6 @@
 # We want parallel builds by default
 , enableParallelBuilding ? true
 
-# Disabled flag
-, disabled ? false
-
 # Do not enable this without good reason
 # IE: programs coupled with the compiler
 , allowGoReference ? false
@@ -37,16 +34,18 @@
 , meta ? {}
 
 # Not needed with buildGoModule
-, goPackagePath ? null
+, goPackagePath ? ""
 
 , ... }@args':
 
 with builtins;
 
-let
-  args = removeAttrs args' [ "overrideModAttrs" "vendorSha256" "disabled" ];
+assert goPackagePath != "" -> throw "`goPackagePath` is not needed with `buildGoModule`";
 
-  go-modules = if vendorSha256 != null then go.stdenv.mkDerivation (let modArgs = {
+let
+  args = removeAttrs args' [ "overrideModAttrs" "vendorSha256" ];
+
+  go-modules = if vendorSha256 != null then stdenv.mkDerivation (let modArgs = {
 
     name = "${name}-go-modules";
 
@@ -119,7 +118,7 @@ let
       }
   ) // overrideModAttrs modArgs) else "";
 
-  package = go.stdenv.mkDerivation (args // {
+  package = stdenv.mkDerivation (args // {
     nativeBuildInputs = [ go ] ++ nativeBuildInputs;
 
     inherit (go) GOOS GOARCH;
@@ -243,9 +242,5 @@ let
                     [ lib.maintainers.kalbasit ];
     };
   });
-in if disabled then
-  throw "${package.name} not supported for go ${go.meta.branch}"
-else if (goPackagePath != null) then
-  throw "`goPackagePath` not needed with `buildGoModule`"
-else
+in
   package

@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitLab, cmake, perl, python3, boost, valgrind
+{ lib, stdenv, fetchFromGitLab, cmake, perl, python3, boost, valgrind
 # Optional requirements
 # Lua 5.3 needed and not available now
 #, luaSupport ? false, lua5
@@ -10,7 +10,7 @@
 , moreTests ? false
 }:
 
-with stdenv.lib;
+with lib;
 
 let
   optionOnOff = option: if option then "on" else "off";
@@ -18,14 +18,14 @@ in
 
 stdenv.mkDerivation rec {
   pname = "simgrid";
-  version = "3.26";
+  version = "3.27";
 
   src = fetchFromGitLab {
     domain = "framagit.org";
     owner = pname;
     repo = pname;
     rev = "v${version}";
-    sha256 = "0kwiggdjqjhjvmwb1m7hb9clvm3xz948fy5ia67dif2pakwad754";
+    sha256 = "13nwsyk030fhl3srhpc28j5s6594z0m38606f4ygc4qhv9wxw011";
   };
 
   nativeBuildInputs = [ cmake perl python3 boost valgrind ]
@@ -92,8 +92,6 @@ stdenv.mkDerivation rec {
     EOW
   '';
 
-  enableParallelBuilding = true;
-
   meta = {
     description = "Framework for the simulation of distributed applications";
     longDescription = ''
@@ -107,6 +105,6 @@ stdenv.mkDerivation rec {
     homepage = "https://simgrid.org/";
     license = licenses.lgpl2Plus;
     maintainers = with maintainers; [ mickours mpoquet ];
-    platforms = ["x86_64-linux"];
+    platforms = platforms.all;
   };
 }

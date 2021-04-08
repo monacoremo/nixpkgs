@@ -1,11 +1,12 @@
-{ mkDerivation, lib, fetchurl, callPackage
-, pkgconfig, cmake, ninja, python3, wrapGAppsHook, wrapQtAppsHook, removeReferencesTo
+{ mkDerivation, lib, fetchurl, fetchpatch, callPackage
+, pkg-config, cmake, ninja, python3, wrapGAppsHook, wrapQtAppsHook, removeReferencesTo
 , qtbase, qtimageformats, gtk3, libsForQt5, enchant2, lz4, xxHash
 , dee, ffmpeg, openalSoft, minizip, libopus, alsaLib, libpulseaudio, range-v3
-, tl-expected, hunspell
-# TODO: Shouldn't be required:
-, pcre, xorg, util-linux, libselinux, libsepol, epoxy, at-spi2-core, libXtst
-, xdg_utils
+, tl-expected, hunspell, glibmm
+# Transitive dependencies:
+, pcre, xorg, util-linux, libselinux, libsepol, epoxy
+, at-spi2-core, libXtst, libthai, libdatrie
+, xdg-utils
 }:
 
 with lib;
@@ -19,15 +20,19 @@ with lib;
 
 let
   tg_owt = callPackage ./tg_owt.nix {};
+  tgcalls-gcc10-fix = fetchpatch { # "Fix build on GCC 10, second attempt."
+    url = "https://github.com/TelegramMessenger/tgcalls/commit/eded7cc540123eaf26361958b9a61c65cb2f7cfc.patch";
+    sha256 = "19n1hvn44pp01zc90g93vq2bcr2gdnscaj5il9f82klgh4llvjli";
+  };
 
 in mkDerivation rec {
   pname = "telegram-desktop";
-  version = "2.4.7";
+  version = "2.7.1";
 
   # Telegram-Desktop with submodules
   src = fetchurl {
     url = "https://github.com/telegramdesktop/tdesktop/releases/download/v${version}/tdesktop-${version}-full.tar.gz";
-    sha256 = "1j2v29952l0am357pqvvgzm2zghmwhlr833kgp85hssxpr9xy4vv";
+    sha256 = "01fxzcfz3xankmdar55ja55pb9hkvlf1plgpgjpsda9xwqgbxgs1";
   };
 
   postPatch = ''
@@ -35,24 +40,24 @@ in mkDerivation rec {
       --replace '"libenchant-2.so.2"' '"${enchant2}/lib/libenchant-2.so.2"'
     substituteInPlace Telegram/CMakeLists.txt \
       --replace '"''${TDESKTOP_LAUNCHER_BASENAME}.appdata.xml"' '"''${TDESKTOP_LAUNCHER_BASENAME}.metainfo.xml"'
+    patch -d Telegram/ThirdParty/tgcalls/ -p1 < "${tgcalls-gcc10-fix}"
   '';
 
   # We want to run wrapProgram manually (with additional parameters)
   dontWrapGApps = true;
   dontWrapQtApps = true;
 
-  nativeBuildInputs = [ pkgconfig cmake ninja python3 wrapGAppsHook wrapQtAppsHook removeReferencesTo ];
+  nativeBuildInputs = [ pkg-config cmake ninja python3 wrapGAppsHook wrapQtAppsHook removeReferencesTo ];
 
   buildInputs = [
-    qtbase qtimageformats gtk3 libsForQt5.libdbusmenu enchant2 lz4 xxHash
+    qtbase qtimageformats gtk3 libsForQt5.kwayland libsForQt5.libdbusmenu enchant2 lz4 xxHash
     dee ffmpeg openalSoft minizip libopus alsaLib libpulseaudio range-v3
-    tl-expected hunspell
+    tl-expected hunspell glibmm
     tg_owt
-    # TODO: Shouldn't be required:
-    pcre xorg.libpthreadstubs xorg.libXdmcp util-linux libselinux libsepol epoxy at-spi2-core libXtst
+    # Transitive dependencies:
+    pcre xorg.libpthreadstubs xorg.libXdmcp util-linux libselinux libsepol epoxy
+    at-spi2-core libXtst libthai libdatrie
   ];
-
-  enableParallelBuilding = true;
 
   cmakeFlags = [
     "-Ddisable_autoupdate=ON"
@@ -80,15 +85,12 @@ in mkDerivation rec {
   # TODO: Package mapbox-variant
 
   postFixup = ''
-    # Nuke refs to `tg_owt` which is introduced by `__FILE__` in headers.
-    remove-references-to -t ${tg_owt} $out/bin/telegram-desktop
-
     # This is necessary to run Telegram in a pure environment.
     # We also use gappsWrapperArgs from wrapGAppsHook.
     wrapProgram $out/bin/telegram-desktop \
       "''${gappsWrapperArgs[@]}" \
       "''${qtWrapperArgs[@]}" \
-      --prefix PATH : ${xdg_utils}/bin \
+      --prefix PATH : ${xdg-utils}/bin \
       --set XDG_RUNTIME_DIR "XDG-RUNTIME-DIR"
     sed -i $out/bin/telegram-desktop \
       -e "s,'XDG-RUNTIME-DIR',\"\''${XDG_RUNTIME_DIR:-/run/user/\$(id --user)}\","

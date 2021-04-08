@@ -4,11 +4,11 @@
 , cmake
 , doxygen
 , fetchFromGitLab
-, fetchpatch
 , ffmpeg_3
 , glew
 , gsm
 , intltool
+, lib
 , libGL
 , libGLU
 , libX11
@@ -23,8 +23,8 @@
 , libv4l
 , libvpx
 , ortp
-, pkgconfig
-, python
+, pkg-config
+, python3
 , SDL
 , speex
 , srtp
@@ -33,7 +33,7 @@
 
 stdenv.mkDerivation rec {
   pname = "mediastreamer2";
-  version = "4.4.13";
+  version = "4.5.1";
 
   src = fetchFromGitLab {
     domain = "gitlab.linphone.org";
@@ -41,7 +41,7 @@ stdenv.mkDerivation rec {
     group = "BC";
     repo = pname;
     rev = version;
-    sha256 = "0w84v1ajhyysr41qaj7x4njwdak84cc10lq33hl8lq68a52fc2vw";
+    sha256 = "0aqma9834lzy1593qb9qwmzvzn50y6fzhmmg493jznf8977b0gsw";
   };
 
   patches = [
@@ -57,8 +57,8 @@ stdenv.mkDerivation rec {
     cmake
     doxygen
     intltool
-    pkgconfig
-    python
+    pkg-config
+    python3
   ];
 
   propagatedBuildInputs = [
@@ -87,6 +87,8 @@ stdenv.mkDerivation rec {
     srtp
   ];
 
+  strictDeps = true;
+
   # Do not build static libraries
   cmakeFlags = [ "-DENABLE_STATIC=NO" ];
 
@@ -99,10 +101,10 @@ stdenv.mkDerivation rec {
   ];
   NIX_LDFLAGS = "-lXext";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A powerful and lightweight streaming engine specialized for voice/video telephony applications";
     homepage = "http://www.linphone.org/technical-corner/mediastreamer2";
-    license = licenses.gpl3;
+    license = licenses.gpl3Only;
     platforms = platforms.linux;
     maintainers = with maintainers; [ jluttine ];
   };

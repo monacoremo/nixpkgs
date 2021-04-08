@@ -1,7 +1,7 @@
 { fetchurl
 , fetchpatch
 , substituteAll
-, stdenv
+, lib, stdenv
 , meson
 , ninja
 , pkg-config
@@ -65,13 +65,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "gnome-shell";
-  version = "3.38.2";
+  version = "3.38.3";
 
   outputs = [ "out" "devdoc" ];
 
   src = fetchurl {
-    url = "mirror://gnome/sources/gnome-shell/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
-    sha256 = "05fm7kxyvws2lbb156wfa2wf4xmkxr49rrjxg0yaxf68v000yq2k";
+    url = "mirror://gnome/sources/gnome-shell/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "sha256-U0W0GMsSqXKVXOXM6u1mYkgAJzNrXFHa6lcwV1tiHO0=";
   };
 
   patches = [
@@ -200,7 +200,7 @@ stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Core user interface for the GNOME 3 desktop";
     homepage = "https://wiki.gnome.org/Projects/GnomeShell";
     license = licenses.gpl2Plus;

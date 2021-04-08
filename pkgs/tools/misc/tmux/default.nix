@@ -1,7 +1,7 @@
-{ stdenv
+{ lib, stdenv
 , fetchFromGitHub
 , autoreconfHook
-, pkgconfig
+, pkg-config
 , makeWrapper
 , bison
 , ncurses
@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [
-    pkgconfig
+    pkg-config
     autoreconfHook
     bison
   ];
@@ -48,6 +48,8 @@ stdenv.mkDerivation rec {
     "--sysconfdir=/etc"
     "--localstatedir=/var"
   ];
+
+  enableParallelBuilding = true;
 
   postInstall = ''
     mkdir -p $out/share/bash-completion/completions
@@ -72,9 +74,9 @@ stdenv.mkDerivation rec {
           * A clean, easily extended, BSD-licensed codebase, under active development.
       '';
 
-    license = stdenv.lib.licenses.bsd3;
+    license = lib.licenses.bsd3;
 
-    platforms = stdenv.lib.platforms.unix;
-    maintainers = with stdenv.lib.maintainers; [ thammers fpletz ];
+    platforms = lib.platforms.unix;
+    maintainers = with lib.maintainers; [ thammers fpletz ];
   };
 }

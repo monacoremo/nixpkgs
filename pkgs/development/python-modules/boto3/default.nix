@@ -12,12 +12,12 @@
 }:
 
 buildPythonPackage rec {
-  pname =  "boto3";
-  version = "1.16.40"; # N.B: if you change this, change botocore too
+  pname = "boto3";
+  version = "1.17.46"; # N.B: if you change this, change botocore and awscli to a matching version
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "sha256-dTJogqpo4ANFLc2PD87gM5/2NiQRWSf7caa10VU1rOU=";
+    sha256 = "sha256-Xe4Vv5YepYTWgfrkLFADTIOXF+dFTD2pDLV6bFLpdTI=";
   };
 
   propagatedBuildInputs = [ botocore jmespath s3transfer ] ++ lib.optionals (!isPy3k) [ futures ];
@@ -34,6 +34,8 @@ buildPythonPackage rec {
 
   # Network access
   doCheck = false;
+
+  pythonImportsCheck = [ "boto3" ];
 
   meta = {
     homepage = "https://github.com/boto/boto3";

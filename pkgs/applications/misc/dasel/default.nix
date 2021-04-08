@@ -1,26 +1,37 @@
-{ stdenv
+{ lib
 , buildGoModule
 , fetchFromGitHub
 }:
 
 buildGoModule rec {
   pname = "dasel";
-  version = "1.10.0";
+  version = "1.13.6";
 
   src = fetchFromGitHub {
     owner = "TomWright";
     repo = pname;
     rev = "v${version}";
-    sha256 = "1n2c6lcn4gad7w1zrh69rjdn5slnf6p7s5rkkkbpvs0jjwri11md";
+    sha256 = "sha256-PTi1blbMVsuftLrFIYNDI8ZFEwRxDA53Md9oZTv7nHs=";
   };
 
-  vendorSha256 = "1il1vnv0v97qh8f47md5i6qaac2k8par0pd0z7zqg67vxq6gim85";
+  vendorSha256 = "sha256-BdX4DO77mIf/+aBdkNVFUzClsIml1UMcgvikDbbdgcY=";
 
   buildFlagsArray = ''
     -ldflags=-s -w -X github.com/tomwright/dasel/internal.Version=${version}
   '';
 
-  meta = with stdenv.lib; {
+  doInstallCheck = true;
+  installCheckPhase = ''
+    if [[ "$("$out/bin/${pname}" --version)" == "${pname} version ${version}" ]]; then
+      echo "" | $out/bin/dasel put object -p yaml -t string -t int "my.favourites" colour=red number=3 | grep -q red
+      echo '${pname} smoke check passed'
+    else
+      echo '${pname} smoke check failed'
+      return 1
+    fi
+  '';
+
+  meta = with lib; {
     description = "Query and update data structures from the command line";
     longDescription = ''
       Dasel (short for data-selector) allows you to query and modify data structures using selector strings.

@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, cmake
+{ lib, stdenv, fetchFromGitHub, fetchpatch, cmake
 }:
 
 stdenv.mkDerivation rec {
@@ -12,9 +12,15 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-THordDPdH2qwk6lFTgeFmkl7iDuA/7YH71PTUe6vJCs=";
   };
 
-  nativeBuildInputs = [ cmake ];
+  patches = [
+    # https://github.com/nlohmann/json/pull/2690
+    (fetchpatch {
+      url = "https://github.com/nlohmann/json/commit/53a9850eebb88c6ff95f6042d08d5c0cc9d18097.patch";
+      sha256 = "k+Og00nXNg5IsFQY5fWD3xVQQXUFFTie44UXole0S1M=";
+    })
+  ];
 
-  enableParallelBuilding = true;
+  nativeBuildInputs = [ cmake ];
 
   cmakeFlags = [
     "-DBuildTests=${if doCheck then "ON" else "OFF"}"
@@ -27,7 +33,7 @@ stdenv.mkDerivation rec {
 
   postInstall = "rm -rf $out/lib64";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Header only C++ library for the JSON file format";
     homepage = "https://github.com/nlohmann/json";
     license = licenses.mit;

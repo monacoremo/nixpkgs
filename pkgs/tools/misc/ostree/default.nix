@@ -1,4 +1,4 @@
-{ stdenv
+{ lib, stdenv
 , fetchurl
 , fetchpatch
 , substituteAll
@@ -25,7 +25,7 @@
 , libarchive
 , libcap
 , bzip2
-, yacc
+, bison
 , libxslt
 , docbook-xsl-nons
 , docbook_xml_dtd_42
@@ -74,7 +74,7 @@ in stdenv.mkDerivation rec {
     gobject-introspection
     which
     makeWrapper
-    yacc
+    bison
     libxslt
     docbook-xsl-nons
     docbook_xml_dtd_42
@@ -119,7 +119,7 @@ in stdenv.mkDerivation rec {
   '';
 
   postFixup = let
-    typelibPath = stdenv.lib.makeSearchPath "/lib/girepository-1.0" [
+    typelibPath = lib.makeSearchPath "/lib/girepository-1.0" [
       (placeholder "out")
       gobject-introspection
     ];
@@ -135,7 +135,7 @@ in stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Git for operating system binaries";
     homepage = "https://ostree.readthedocs.io/en/latest/";
     license = licenses.lgpl2Plus;

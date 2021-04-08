@@ -9,7 +9,7 @@
 
 buildPythonPackage rec {
   pname = "discord.py";
-  version = "1.5.1";
+  version = "1.7.0";
   disabled = pythonOlder "3.5.3";
 
   # only distributes wheels on pypi now
@@ -17,13 +17,12 @@ buildPythonPackage rec {
     owner = "Rapptz";
     repo = pname;
     rev = "v${version}";
-    sha256 = "1bidyclwv20p1kfphj21r5gm3kr2vxx0zd151wg7fcngbbx7gmza";
+    sha256 = "1i5k2qb894rjksn21pk9shash1y7v4138rkk8mqr1a1yvgnr5ibg";
   };
 
   propagatedBuildInputs = [ aiohttp websockets ];
   patchPhase = ''
     substituteInPlace "requirements.txt" \
-      --replace "aiohttp>=3.6.0,<3.7.0" "aiohttp" \
       --replace "websockets>=6.0,!=7.0,!=8.0,!=8.0.1,<9.0" "websockets"
   '' + lib.optionalString withVoice ''
     substituteInPlace "discord/opus.py" \

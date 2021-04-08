@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, makeWrapper, curl, openssl, socat, iproute, unixtools, dnsutils }:
+{ stdenv, lib, fetchFromGitHub, makeWrapper, curl, openssl, socat, iproute2, unixtools, dnsutils }:
 stdenv.mkDerivation rec {
   pname = "acme.sh";
   version = "2.8.8";
@@ -22,12 +22,12 @@ stdenv.mkDerivation rec {
           openssl
           curl
           dnsutils
-          (if stdenv.isLinux then iproute else unixtools.netstat)
+          (if stdenv.isLinux then iproute2 else unixtools.netstat)
         ]
       }"
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A pure Unix shell script implementing ACME client protocol";
     homepage = "https://acme.sh/";
     license = licenses.gpl3;
